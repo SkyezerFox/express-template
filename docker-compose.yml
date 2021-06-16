@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  express_template_pg:
+    container_name: express_template_pg
+    image: postgres:alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=express_template
