@@ -2,6 +2,7 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 
+import { WithPrismaServer } from "./prisma-server";
 import { Server } from "./server";
 import { Awaitable } from "./types";
 
@@ -16,7 +17,12 @@ export type MiddlewareHandler<T extends Server<T>> = (server: T) => Awaitable<an
  */
 export const useHelmet: MiddlewareHandler<Server<any>> = (s) => {
 	s.logger.silly("applying helmet security middleware...");
-	s.express.use(helmet());
+
+	if (s instanceof WithPrismaServer) {
+		s.express.use(helmet({ contentSecurityPolicy: process.env.NODE_ENV === "production" ? undefined : false }));
+	} else {
+		s.express.use(helmet());
+	}
 };
 
 /**

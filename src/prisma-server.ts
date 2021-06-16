@@ -6,10 +6,17 @@ import { buildSchema } from "type-graphql";
 import { resolvers } from "@generated/type-graphql";
 import { PrismaClient } from "@prisma/client";
 
-import { Server, ServerOptions } from "./server";
+import { DEFAULT_OPTIONS as DEFAULT_SERVER_OPTIONS, Server, ServerOptions } from "./server";
 import { Partional } from "./types";
 
-interface PrismaServerOptions extends ServerOptions {}
+interface PrismaServerOptions extends ServerOptions {
+	enablePlayground: boolean;
+}
+
+const DEFAULT_OPTIONS: PrismaServerOptions = {
+	...DEFAULT_SERVER_OPTIONS,
+	enablePlayground: false,
+};
 
 /**
  * A generic HTTP server with a Prisma database backend.
@@ -20,9 +27,14 @@ export class WithPrismaServer<T extends WithPrismaServer<T>> extends Server<T> {
 	 */
 	readonly prisma = new PrismaClient();
 
-	constructor(options: Partional<PrismaServerOptions>) {
-		super(options);
+	/**
+	 * The options for this prisma server instance.
+	 */
+	declare readonly options: PrismaServerOptions;
 
+	constructor(options: Partional<PrismaServerOptions & ServerOptions>) {
+		super({ ...DEFAULT_OPTIONS, ...options });
+		// add prisma listener
 		this.beforeListen(async () => await this.setupPrisma());
 	}
 
@@ -41,7 +53,13 @@ export class WithPrismaServer<T extends WithPrismaServer<T>> extends Server<T> {
 		});
 		// create the apollo server
 		this.logger.debug("Attaching graphql middleware...");
-		const server = new ApolloServer({ schema, playground: true, introspection: true });
+		const server = new ApolloServer({
+			schema,
+			playground: true,
+			introspection: true,
+			// declare prisma as context
+			context: () => ({ prisma: this.prisma }),
+		});
 		server.applyMiddleware({ app: this.express });
 	}
 }
