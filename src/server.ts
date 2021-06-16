@@ -1,5 +1,5 @@
 import express from "express";
-import { createServer } from "http2";
+import { createServer } from "http";
 import { createLogger, Logger } from "winston";
 import { Console } from "winston/lib/winston/transports";
 
